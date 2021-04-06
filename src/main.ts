@@ -1,23 +1,19 @@
 import { NestFactory } from '@nestjs/core';
-import { NestFastifyApplication, FastifyAdapter } from '@nestjs/platform-fastify';
-import { join } from 'path'
 import { AppModule } from './app.module';
-import * as cors from 'cors';
-async function bootstrap() {
-  const app = await NestFactory.create<NestFastifyApplication>(
-    AppModule,
-    new FastifyAdapter(),
-  );
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
+import hbs = require('hbs');
 
-  app.useStaticAssets({root: join(__dirname, '..', 'public')});
-  //app.setBaseViewsDir(join(__dirname, '..', 'views'));
-  app.setViewEngine({
-    engine: {
-      handlebars: require('handlebars'),
-    },
-    templates: join(__dirname, '..', 'views'),
-  });
-  app.use(cors());
+async function bootstrap() {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  app.useStaticAssets(join(__dirname, '..', 'public'));
+  app.setBaseViewsDir(join(__dirname, '..', 'views'));
+  app.setViewEngine('hbs');
+
+  hbs.registerPartials(join(__dirname, '..', 'views', 'partials'));
+
   await app.listen(3000);
 }
+
 bootstrap();
