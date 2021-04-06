@@ -7,7 +7,7 @@ export class AppController {
 
   @Get()
   @Render('./views/index.hbs')
-  root(): string {
-    return this.appService.root();
+  root() {
+    return { message: 'Hello world!' };
   }
 }

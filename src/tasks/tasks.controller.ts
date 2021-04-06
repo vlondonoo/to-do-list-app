@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/
 import { TasksService } from './tasks.service';
 import { Task } from './task.model';
 import { TaskStatusValidationPipe } from './task-status-validation.pipe';
+import { TaskEntity } from './task.entity';
 
 @Controller('api/tasks')
 export class TasksController {
@@ -9,17 +10,13 @@ export class TasksController {
     }
 
     @Post()
-    createTask(@Body() body): Task {
-        return this.tasksService.createTask(body.title, body.status);
+    createTask(@Body() body) {
+        return this.tasksService.createTask(body);
     }
 
     @Get()
-    getTasks(@Query('search') searchQuery: string): Task[] {
-        if (searchQuery) {
-            return this.tasksService.searchTasks(searchQuery);
-        } else {
-            return this.tasksService.getAllTasks();
-        }
+    getAllTasks() {
+        return this.tasksService.getAllTasks();
     }
 
     @Get(':id')
@@ -32,7 +29,7 @@ export class TasksController {
         return this.tasksService.deleteTask(id);
     }
 
-    @Put(':id/status')
+    @Put(':id')
     updateTaskStatus(
         @Param('id') id: string,
         @Body('status', new TaskStatusValidationPipe()) status,

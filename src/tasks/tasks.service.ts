@@ -1,43 +1,70 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { Task } from './task.model';
+import { Injectable,InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { TaskStatus } from './task-status.enum';
+import { TaskEntity } from './task.entity';
 
 @Injectable()
 export class TasksService {
-    private tasks: Task[] = [];
+  
+    constructor(
+        @InjectRepository(TaskEntity)
+        private readonly tasksRepository: Repository<TaskEntity>,
+      ) {}
 
-    createTask(title: string, status: string): Task {
-        const task = new Task(title, status);
-        this.tasks.push(task);
-        return task;
+
+      async createTask(task): Promise<TaskEntity> {
+        await this.tasksRepository.insert(task);
+        return  task
     }
 
-    getAllTasks(): Task[] {
-        return this.tasks;
+    
+
+    async getAllTasks(): Promise<TaskEntity[]> {
+        return await this.tasksRepository.find({});
     }
 
-    searchTasks(query: string): Task[] {
-        return this.tasks.filter(task => task.description.includes(query));
-    }
 
-    getTask(id: string): Task {
-        const found = this.tasks.find(task => task.id === id);
+    async getTask(id: string): Promise<TaskEntity> {
+        let found;
+
+        try {
+            found = await this.tasksRepository.findOne({ id });
+        } catch (error) {
+            throw new InternalServerErrorException();
+        }
+
         if (!found) {
             throw new NotFoundException('Task not found');
         }
+
         return found;
     }
+  
+    async deleteTask(id: string): Promise<TaskEntity[]> {
+        await this.getTask(id);
 
-    deleteTask(id: string): Task[] {
-        const task = this.getTask(id);
-        const index = this.tasks.indexOf(task);
-        this.tasks.splice(index, 1);
-        return this.tasks;
+        try {
+            await this.tasksRepository.delete({ id});
+        } catch (error) {
+            throw new InternalServerErrorException();
+        }
+
+        return this.getAllTasks();
     }
+    
 
-    updateTaskStatus(id: string, status: TaskStatus): Task {
-        const task = this.getTask(id);
-        task.setStatus(status);
+    async updateTaskStatus(id: string, status: TaskStatus): Promise<TaskEntity> {
+        const task = await this.getTask(id);
+
+        try {
+            task.status = status;
+            await this.tasksRepository.save(task);
+        } catch (error) {
+            throw new InternalServerErrorException();
+        }
+
         return task;
     }
 }
+
